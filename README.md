@@ -1,6 +1,5 @@
 # Introduction
-A single page application to create maps of your favorite area.
-It creates a 3840x5430 JPEG file you can then print.
+Create pairs of maps as training data for machine learning applications.
 
 # Usage
 You need to get an API key from https://developers.google.com/maps/documentation/javascript/get-api-key#key to run it and is intented for private use only.
@@ -8,15 +7,16 @@ You need to get an API key from https://developers.google.com/maps/documentation
 <script src="http://maps.google.com/maps/api/js?key=<APIKEY>&libraries=places&callback=initScript" async defer></script>
 ```
 # Demo
-http://bgon.github.io/Map-Poster-Generator/
+http://bgon.github.io/Map-Dataset-Generator/
 
-# Examples
-![San Fransisco](images/san_francisco.png?raw=true "")
-![Detroit](images/detroit.png?raw=true "")
-![Dubai](images/dubai.png?raw=true "")
-![Karlaplan](images/karlaplan.png?raw=true "")
-![Paris](images/paris.png?raw=true "")
-![Chicago](images/chicago.png?raw=true "")
+# Interface
+![UI](images/ui.png?raw=true "")
+
+# Output files
+### R_16_52.37247161913425_4.899257492065431.jpg
+![Amsterdam Road Map](images/R_16_52.37247161913425_4.899257492065431.jpg?raw=true "")
+### S_16_52.37247161913425_4.899257492065431.jpg
+![Amsterdam Satellite Map](images/S_16_52.37247161913425_4.899257492065431.jpg?raw=true "")
 
 # Dependencies
 * html2canvas.js, renders the current page as a canvas image https://github.com/niklasvh/html2canvas
@@ -24,4 +24,3 @@ http://bgon.github.io/Map-Poster-Generator/
 * FileSaver.min.js, implements the HTML5 W3C saveAs() FileSaver interface in browsers that do not natively support it https://github.com/eligrey/FileSaver.js/
 * jspdf.js and addimage.js for pdf creation https://github.com/MrRio/jsPDF
 * ionicons icons https://github.com/driftyco/ionicons/
-* Asimov  by Robert Jablonski http://www.dafont.com/robert-jablonski.d5679

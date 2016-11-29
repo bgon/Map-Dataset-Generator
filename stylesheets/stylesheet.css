@@ -2,9 +2,11 @@
     box-sizing: border-box;
 }
 
-@font-face {
-    font-family: 'Asimov';
-    src: url('../fonts/Asimov.otf');
+html {
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
 }
 
 @font-face {
@@ -21,13 +23,9 @@ body {
     background-color: #FDFCFD;
 }
 
-#container {
-    width: 480px;
-    margin: auto;
-}
-
 #posterContainer {
-    width: 480px;
+    width: 1024px;
+    height: 512px;
     margin: auto;
     margin-top: 8px;
     background-color: #FFFFFF;
@@ -35,18 +33,12 @@ body {
 }
 
 #mapContainer {
-    width: 384px;
-    padding-top: 48px;
-    padding-bottom: 48px;
-    margin: auto;
+    width: 1024px;
 }
 
-#preloadfont {
-    font-family: Asimov;
-    opacity: 0;
-    height: 0;
-    width: 0;
-    display: inline-block;
+#road_map,
+#satellite_map {
+    float: left;
 }
 
 .saveButton {
@@ -121,7 +113,7 @@ body {
     font-weight: 300;
     padding: 0 13px 0 13px;
     text-overflow: ellipsis;
-    width: 240px;
+    width: 300px;
     margin-right: 30px;
     color: black;
 }
@@ -199,6 +191,11 @@ a:hover {
 
 #messages {
     margin-top: 100px;
+    font-size: 18px;
+    text-align: center;
+}
+
+#shortUrl {
     font-size: 18px;
     text-align: center;
 }
@@ -303,14 +300,12 @@ a:hover {
     margin-bottom: 0.5rem;
     font-weight: normal;
     color: #444444;
-    text-align: center;
 }
 
 .main-content p {
     margin-bottom: 1.2em;
     font-size: 0.8rem;
     color: #AAAAAA;
-    text-align: center;
 }
 
 .main-content code {
@@ -470,7 +465,7 @@ a:hover {
 .site-footer {
     padding-top: 1rem;
     margin-top: 0rem;
-    text-align: center;
+      text-align: center;
 }
 
 .site-footer-owner {

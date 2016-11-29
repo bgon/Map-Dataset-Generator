@@ -41,7 +41,7 @@ var parseQueryString = function () {
     return objURL;
 };
 
-function save(width) {
+function pairSave(width) {
     is_save_image = true;
     changeCanvasSize(width);
 }

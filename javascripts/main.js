@@ -1,38 +1,28 @@
 //Canvas & Map variables
 var road_map = {};
+var satellite_map = {};
 var road_map_canvas = document.getElementById("road_map");
-var poster_canvas = document.createElement('canvas');
-var poster_preview_canvas = document.getElementById('poster_preview_canvas');
+var satellite_map_canvas = document.getElementById("satellite_map");
 var is_save_image = false;
-var init_lat = 19.535150062652995;
-var init_lng = -99.03838422592776;
+var init_lat = 41.88388330337919;
+var init_lng = -87.66031516374511;
 var init_zoom = 14;
-var generated_size = 384;
-var resolved_location_name = 'Mexico City';
-var poster_title = 'MEXICO CITY';
-var stroke_weight = 1;
+var generated_size = 512;
 var url;
-var copyrights;
+var current_map;
 
 //Modal
+var previewModal = document.getElementById('previewModal');
 var infoModal = document.getElementById('infoModal');
 var body = document.getElementsByTagName('body');
 var container = document.getElementById('container');
 
-
 //Url
 var urlSettings = parseQueryString();
-if (Object.keys(urlSettings).length === 4) {
-    init_lat = parseFloat(urlSettings.lat);
-    init_lng = parseFloat(urlSettings.lng);
-    init_zoom = parseInt(urlSettings.zoom);
-    resolved_location_name = decodeURIComponent(urlSettings.name);
-    poster_title = '';
-    for (var i = 0, len = resolved_location_name.length; i < len; i++) {
-        poster_title = poster_title + resolved_location_name[i].toUpperCase() + '  ';
-    }
-    poster_title = poster_title.substring(0, poster_title.length - 2);
-    document.title = 'Poster Map Generator: ' + resolved_location_name;
+if (Object.keys(urlSettings).length === 3) {
+    var init_lat = parseFloat(urlSettings.lat);
+    var init_lng = parseFloat(urlSettings.lng);
+    var init_zoom = parseInt(urlSettings.zoom);
 }
 
 /**
@@ -41,13 +31,13 @@ if (Object.keys(urlSettings).length === 4) {
  */
 function changeCanvasSize(width) {
     road_map = {};
-    stroke_weight = 1;
-    if (width != 384) {
+    satellite_map = {};
+
+    if (width != 512) {
         //Open the modal
         openModal();
         document.getElementById("mapContainer").style.opacity = 0;
         displayStatus("Generating the map, be patient...");
-        stroke_weight = 3;
     }
 
     //update zoom with the new size
@@ -62,34 +52,18 @@ function changeCanvasSize(width) {
     height = width;
     document.getElementById('road_map').style.width = width + "px";
     document.getElementById('road_map').style.height = height + "px";
-    initMap();
+    document.getElementById('satellite_map').style.width = width + "px";
+    document.getElementById('satellite_map').style.height = height + "px";
+    initMaps();
 }
-
-
-//from http://stackoverflow.com/questions/10521978/html5-canvas-image-contrast
-function contrastImage(imageData, contrast) {
-    var data = imageData.data;
-    var factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-    for (var i = 0; i < data.length; i += 4) {
-        data[i] = factor * (data[i] - 128) + 128;
-        data[i + 1] = factor * (data[i + 1] - 128) + 128;
-        data[i + 2] = factor * (data[i + 2] - 128) + 128;
-    }
-    return imageData;
-}
-
 
 /**
  * Generate the picture
  */
 function generatePicture() {
     displayStatus("Fixing the layout...");
-
     //Google requires clear, visible attribution to both Google and their data providers when the content is shown
     //https://www.google.com/permissions/geoguidelines.html
-    //this info will be too small when generated...
-    //Thus we will insert this info as text in the poster
-
     nodes2hide = document.getElementsByClassName("gmnoprint");
     for (i = 0; i < nodes2hide.length; i++) {
         nodes2hide[i].style.display = 'none';
@@ -103,66 +77,30 @@ function generatePicture() {
         nodes2hide[i].style.display = 'none';
     }
 
+
     html2canvas(road_map_canvas, {
         useCORS: true
     }).then(function (canvas) {
-
-        var Pr = 297 / 210;
-        var PWf = generated_size / 0.8;
-        var PW = Math.floor(PWf);
-        var PH = Math.floor(Pr * PWf);
-        var Pm = Math.floor(PWf * 0.1);
-        var PtitleY = Math.floor(PH * 0.75);
-        var PcopyY = Math.floor(PH * 0.85);
-        var Ptitle_fontsize = Math.floor(generated_size / 20);
-        var Pcopy_fontsize = Math.floor(generated_size / 80);
-
-        var d = new Date();
-        var render_date = d.toISOString().substring(0, 10);
-        var poster_title = '';
-        for (var i = 0, len = resolved_location_name.length; i < len; i++) {
-            poster_title = poster_title + resolved_location_name[i].toUpperCase() + '  ';
-        }
-        poster_title = poster_title.substring(0, poster_title.length - 2);
-
-        //boost the contrast to hide some few artefacts
-        canvas_ctx = canvas.getContext("2d");
-        var imageData = canvas_ctx.getImageData(0, 0, generated_size, generated_size);
-        imageData = contrastImage(imageData, 70);
-        canvas_ctx.putImageData(imageData, 0, 0);
-
-        //Create the poster
-        poster_canvas.width = PW;
-        poster_canvas.height = PH;
-        poster_canvas_ctx = poster_canvas.getContext("2d");
-        poster_canvas_ctx.fillStyle = "#fff";
-        poster_canvas_ctx.fillRect(0, 0, PW, PH);
-
-        //copy the map
-        //... too much artefacts with putImageData, use drawImage instead
-        //poster_canvas_ctx.putImageData(imageData, Pm, Pm, 0, 0, generated_size, generated_size);
-        poster_canvas_ctx.drawImage(canvas, Pm, Pm);
-
-        //insert the texts
-        poster_canvas_ctx.fillStyle = "#444";
-        poster_canvas_ctx.font = Ptitle_fontsize + "px Asimov";
-        poster_canvas_ctx.textAlign = 'center';
-        poster_canvas_ctx.fillText(poster_title, PW / 2, PtitleY);
-        poster_canvas_ctx.fillStyle = "#888";
-        poster_canvas_ctx.font = Pcopy_fontsize + "px Asimov";
-        poster_canvas_ctx.textAlign = 'center';
-        poster_canvas_ctx.fillText(copyrights + " | " + render_date, PW / 2, PcopyY);
-
-        image_name = resolved_location_name + '_' + generated_size + '_' + init_lat + '_' + init_lng + '_' + init_zoom;
-        poster_canvas.toBlob(function (blob) {
+        image_name = 'R_' + init_zoom + '_' + init_lat + '_' + init_lng;
+        canvas.toBlob(function (blob) {
             saveAs(blob, image_name + '.jpg');
         }, "image/jpeg", 1.0);
-        //END
-        is_save_image = false;
-        changeCanvasSize(384);
-        document.getElementById("mapContainer").style.opacity = 1;
-        displayStatus('');
-        closeModal();
+        html2canvas(satellite_map_canvas, {
+            useCORS: true
+        }).then(function (canvas) {
+            image_name = 'S_' + init_zoom + '_' + init_lat + '_' + init_lng;
+            canvas.toBlob(function (blob) {
+                saveAs(blob, image_name + '.jpg');
+            }, "image/jpeg", 0.9);
+
+            //END
+            is_save_image = false;
+            changeCanvasSize(512);
+            document.getElementById("mapContainer").style.opacity = 1;
+            displayStatus('');
+            closeModal();
+        });
+
     });
 }
 
@@ -174,9 +112,9 @@ function initScript() {
 }
 
 /**
- * Create the map
+ * Create the maps
  */
-function initMap() {
+function initMaps() {
 
     var myLatlng = new google.maps.LatLng(init_lat, init_lng);
 
@@ -186,7 +124,7 @@ function initMap() {
         disableDefaultUI: true,
         zoomControl: true,
         zoomControlOptions: {
-            position: google.maps.ControlPosition.LEFT_TOP
+            position: google.maps.ControlPosition.LEFT_CENTER
         },
 
         keyboardShortcuts: true,
@@ -212,6 +150,32 @@ function initMap() {
                 "visibility": "on"
             }]
         }, {
+            "featureType": "poi.park",
+            "elementType": "geometry",
+            "stylers": [{
+                "color": "#00FF00"
+            }, {
+                "visibility": "on"
+            }]
+        }, {
+            "featureType": "poi.medical",
+            "elementType": "geometry",
+            "stylers": [{
+                "color": "#FF0000"
+            }, {
+                "visibility": "on"
+            }]
+        }, {
+            "featureType": "transit.line",
+            "elementType": "geometry",
+            "stylers": [{
+                "visibility": "on"
+            }, {
+                "color": "#FFFF00"
+            }, {
+                "weight": 3
+            }]
+        }, {
             "featureType": "road",
             "elementType": "geometry",
             "stylers": [{
@@ -219,23 +183,23 @@ function initMap() {
             }, {
                 "color": "#000000"
             }, {
-                "weight": stroke_weight
+                "weight": 1
             }]
         }, {
             "featureType": "road.highway",
             "elementType": "geometry",
             "stylers": [{
-                "color": "#000000F"
+                "color": "#0000FF"
             }, {
-                "weight": stroke_weight
+                "weight": 1
             }]
         }, {
             "featureType": "road.arterial",
             "elementType": "geometry",
             "stylers": [{
-                "color": "#000000"
+                "color": "#FF00FF"
             }, {
-                "weight": stroke_weight
+                "weight": 3
             }]
         }, {
             "featureType": "road.local",
@@ -243,34 +207,28 @@ function initMap() {
             "stylers": [{
                 "color": "#000000"
             }, {
-                "weight": stroke_weight
+                "weight": 3
+            }]
+        }, {
+            "featureType": "water",
+            "elementType": "geometry",
+            "stylers": [{
+                "color": "#00FFFF"
+            }, {
+                "visibility": "on"
             }]
         }]
     };
 
     road_map = new google.maps.Map(document.getElementById('road_map'), mapOptions);
 
+    road_map.addListener('drag', function () {
+        current_map = 'road';
+    });
+
     road_map.addListener('idle', function () {
-        document.title = "Map Poster Generator: " + resolved_location_name;
-        copyrights = document.getElementsByClassName("gmnoscreen")[0].firstChild.firstChild.textContent;
-        var d = new Date();
-        var render_date = d.toISOString().substring(0, 10);
-
-        var ctx = poster_preview_canvas.getContext('2d');
-        ctx.clearRect(0, 0, poster_preview_canvas.width, poster_preview_canvas.height);
-
-        //insert the texts
-        ctx.fillStyle = "#444";
-        ctx.font = "20px Asimov";
-        ctx.textAlign = 'center';
-        ctx.fillText(poster_title, 240, 29);
-        ctx.fillStyle = "#888";
-        ctx.font = "7px Asimov";
-        ctx.textAlign = 'center';
-        ctx.fillText(copyrights + " | " + render_date, 240, 97);
-
         // update the url
-        url = '?zoom=' + init_zoom + '&lat=' + init_lat + '&lng=' + init_lng + '&name=' + resolved_location_name;
+        url = '?zoom=' + init_zoom + '&lat=' + init_lat + '&lng=' + init_lng;
         window.history.replaceState("", "", url);
     });
 
@@ -286,6 +244,12 @@ function initMap() {
         init_zoom = road_map.zoom;
         init_lat = road_map.center.lat();
         init_lng = road_map.center.lng();
+
+        myLatlng = new google.maps.LatLng(init_lat, init_lng);
+        if (current_map == 'road') {
+            satellite_map.setCenter(myLatlng);
+            satellite_map.setZoom(init_zoom);
+        }
     });
 
     var markers = [];
@@ -296,13 +260,6 @@ function initMap() {
         if (places.length === 0) {
             return;
         }
-        resolved_location_name = places[0].name;
-        poster_title = '';
-        for (var i = 0, len = resolved_location_name.length; i < len; i++) {
-            poster_title = poster_title + resolved_location_name[i].toUpperCase() + '  ';
-        }
-        poster_title = poster_title.substring(0, poster_title.length - 2);
-
         // Clear out the old markers.
         markers.forEach(function (marker) {
             marker.setMap(null);
@@ -320,6 +277,44 @@ function initMap() {
             }
         });
         road_map.fitBounds(bounds);
+        satellite_map.fitBounds(bounds);
     });
 
+    //satellite_map
+    mapOptions = {
+        zoom: init_zoom,
+        center: myLatlng,
+        mapTypeId: 'satellite',
+        disableDefaultUI: true,
+        zoomControl: false,
+        keyboardShortcuts: false,
+        rotateControl: false,
+        scrollwheel: true,
+        draggable: true
+    };
+
+    satellite_map = new google.maps.Map(document.getElementById('satellite_map'),
+        mapOptions);
+
+    satellite_map.addListener('drag', function () {
+        current_map = 'satellite';
+    });
+
+    satellite_map.addListener('idle', function () {
+        // update the url
+        url = '?zoom=' + init_zoom + '&lat=' + init_lat + '&lng=' + init_lng;
+        window.history.replaceState("", "", url);
+    });
+
+    satellite_map.addListener('bounds_changed', function () {
+        init_zoom = satellite_map.zoom;
+        init_lat = satellite_map.center.lat();
+        init_lng = satellite_map.center.lng();
+
+        myLatlng = new google.maps.LatLng(init_lat, init_lng);
+        if (current_map == 'satellite') {
+            road_map.setCenter(myLatlng);
+            road_map.setZoom(init_zoom);
+        }
+    });
 }

@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Map Poster Generator</title>
+	<title>Map Dataset Generator</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="mobile-web-app-capable" content="yes">
 	<link rel="apple-touch-icon" href="images/icon.png">
@@ -22,21 +22,22 @@
 <body>
 	<main id="container" class="MainContainer">
 		<section class="main-content">
-			<h1>Map Poster Generator</h1>
-			<p>Create a map poster (3840x5430 JPEG file) you can print on your favorite paper!</p>
+			<h1>Map Dataset Generator</h1>
+			<p>Create pairs of maps as training data for machine learning applications.</p>
 			<div id="tools">
 				<input autocomplete="off" placeholder="Search for city or country" class="controls" id="pac-input" type="text">
-				<button class="saveButton icon ion-ios-download-outline" onClick="save(3072)" title="Save poster as a 20 megapixels .jpg file"> Save Poster!</button>
+				<button class="saveButton icon ion-ios-download-outline" onClick="pairSave(1024)" title="Save images with a 1024x1024px dimension"> 1024px</button>
+				<button class="saveButton icon ion-ios-download-outline" onClick="pairSave(2048)" title="Save images with a 2048x2048px dimension"> 2048px</button>
 				<button class="shareButton icon ion-android-share-alt" onClick="share()" title="Share this map"></button>
 			</div>
 			<div id="posterContainer">
 				<div id="mapContainer">
 					<div id="road_map"></div>
+					<div id="satellite_map"></div>
 				</div>
-				<canvas id="poster_preview_canvas" width="480" height="199"></canvas>
 			</div>
 			<footer class="site-footer">
-				<span class="site-footer-credits"><a href="https://github.com/bgon/Map-Poster-Generator" title="Fork me on GitHub"><img src="images/GitHub-Mark-32px.png" ></a></span>
+				<span class="site-footer-credits"><a href="https://github.com/bgon/Map-Dataset-Generator" title="Fork me on GitHub"><img src="images/GitHub-Mark-32px.png" ></a></span>
 			</footer>
 		</section>
 	</main>
@@ -46,11 +47,8 @@
 			<p id="messages"></p>
 		</div>
 	</div>
-	<div id="preloadfont">.</div>
-	<div id="preloadfontR">.</div>
 	<script src="javascripts/main.js"></script>
-	<script src="http://maps.google.com/maps/api/js?key=<APIKEY>&libraries=places&callback=initScript"
-					async defer></script>
+	<script src="http://maps.google.com/maps/api/js?key=<APIKEY>&libraries=places&callback=initScript" async defer></script>
 </body>
 
 </html>
