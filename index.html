@@ -23,11 +23,13 @@
 	<main id="container" class="MainContainer">
 		<section class="main-content">
 			<h1>Map Dataset Generator</h1>
-			<p>Create pairs of maps as training data for machine learning applications.</p>
+			<p>Create training, validation and testing pairs of maps for machine learning applications.</p>
 			<div id="tools">
 				<input autocomplete="off" placeholder="Search for city or country" class="controls" id="pac-input" type="text">
 				<button class="saveButton icon ion-ios-download-outline" onClick="pairSave(1024)" title="Save images with a 1024x1024px dimension"> 1024px</button>
 				<button class="saveButton icon ion-ios-download-outline" onClick="pairSave(2048)" title="Save images with a 2048x2048px dimension"> 2048px</button>
+				<button class="saveButton icon ion-ios-download-outline" onClick="areaSet(16)" title="Save area as a 256 images dataset (~25MB)" id="areamessages_16"> Area 256</button>
+				<button class="saveButton icon ion-ios-download-outline" onClick="areaSet(32)" title="Save area as a 1024 images dataset (~95MB)" id="areamessages_32"> Area 1024</button>
 				<button class="shareButton icon ion-android-share-alt" onClick="share()" title="Share this map"></button>
 			</div>
 			<div id="posterContainer">

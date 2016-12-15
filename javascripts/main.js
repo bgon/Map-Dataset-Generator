@@ -3,6 +3,8 @@ var road_map = {};
 var satellite_map = {};
 var road_map_canvas = document.getElementById("road_map");
 var satellite_map_canvas = document.getElementById("satellite_map");
+var pair_canvas = document.createElement('canvas');
+var pair_canvas_ctx = pair_canvas.getContext("2d");
 var is_save_image = false;
 var init_lat = 41.88388330337919;
 var init_lng = -87.66031516374511;
@@ -10,6 +12,11 @@ var init_zoom = 14;
 var generated_size = 512;
 var url;
 var current_map;
+var scale = 16;
+var intervalLng;
+var intervalLat;
+var setCenter = [];
+var areasaveStatus = false;
 
 //Modal
 var previewModal = document.getElementById('previewModal');
@@ -33,6 +40,10 @@ function changeCanvasSize(width) {
     road_map = {};
     satellite_map = {};
 
+    //Create the pair
+    pair_canvas.width = width * 2;
+    pair_canvas.height = width;
+
     if (width != 512) {
         //Open the modal
         openModal();
@@ -49,16 +60,15 @@ function changeCanvasSize(width) {
     }
     init_zoom = init_zoom + delta;
     generated_size = width;
-    height = width;
-    document.getElementById('road_map').style.width = width + "px";
-    document.getElementById('road_map').style.height = height + "px";
-    document.getElementById('satellite_map').style.width = width + "px";
-    document.getElementById('satellite_map').style.height = height + "px";
+    document.getElementById('road_map').style.width = generated_size + "px";
+    document.getElementById('road_map').style.height = generated_size + "px";
+    document.getElementById('satellite_map').style.width = generated_size + "px";
+    document.getElementById('satellite_map').style.height = generated_size + "px";
     initMaps();
 }
 
 /**
- * Generate the picture
+ * Generate the picture with html2canvas
  */
 function generatePicture() {
     displayStatus("Fixing the layout...");
@@ -81,29 +91,72 @@ function generatePicture() {
     html2canvas(road_map_canvas, {
         useCORS: true
     }).then(function (canvas) {
-        image_name = 'R_' + init_zoom + '_' + init_lat + '_' + init_lng;
-        canvas.toBlob(function (blob) {
-            saveAs(blob, image_name + '.jpg');
-        }, "image/jpeg", 1.0);
+
+        pair_canvas_ctx.drawImage(canvas, 0, 0);
+
         html2canvas(satellite_map_canvas, {
             useCORS: true
         }).then(function (canvas) {
-            image_name = 'S_' + init_zoom + '_' + init_lat + '_' + init_lng;
-            canvas.toBlob(function (blob) {
+
+            pair_canvas_ctx.drawImage(canvas, generated_size, 0);
+
+            if (areasaveStatus === true) {
+                // split the dataset into training, validation and testing sets 
+                var num = Math.random();
+                if (num < 1 / 5) set = 'val_'; //validation probability 20%
+                else if (num < 10 / 25) set = 'test_'; //testing probability 20%
+                else set = 'train_'; //training probability 60%
+                index = set + ('0000' + (Math.pow(scale, 2) - setCenter.length)).slice(-4) + '_';
+            } else {
+                index = '0000_';
+            }
+            image_name = index + init_zoom + '_' + init_lat.toFixed(5) + '_' + init_lng.toFixed(5);
+            pair_canvas.toBlob(function (blob) {
                 saveAs(blob, image_name + '.jpg');
-            }, "image/jpeg", 0.9);
+            }, "image/jpeg", 0.85);
 
-            //END
-            is_save_image = false;
-            changeCanvasSize(512);
-            document.getElementById("mapContainer").style.opacity = 1;
-            displayStatus('');
-            closeModal();
+            if (areasaveStatus === true) {
+                setTimeout(function () {
+                    areaSave();
+                }, 200);
+            } else {
+                is_save_image = false;
+                changeCanvasSize(512);
+                document.getElementById("mapContainer").style.opacity = 1;
+                displayStatus('');
+                closeModal();
+            }
         });
-
     });
 }
 
+
+/**
+ * Save the Area as a dataset
+ */
+function areaSave() {
+
+    mapset = setCenter.shift();
+    if (mapset) {
+        areasaveStatus = true;
+        areaStatus(' Area ' + (Math.pow(scale, 2) - setCenter.length) + '/' + Math.pow(scale, 2));
+        init_lat = mapset[0];
+        init_lng = mapset[1];
+        init_zoom = mapset[2];
+        myLatlng = new google.maps.LatLng(init_lat, init_lng);
+        road_map.setCenter(myLatlng);
+        road_map.setZoom(init_zoom);
+        satellite_map.setCenter(myLatlng);
+        satellite_map.setZoom(init_zoom);
+    } else {
+        areasaveStatus = false;
+        changeCanvasSize(512);
+    }
+}
+
+/**
+ * Google Map init
+ */
 function initScript() {
     //The Search Box
     var input = document.getElementById('pac-input');
@@ -111,8 +164,9 @@ function initScript() {
     changeCanvasSize(generated_size);
 }
 
+
 /**
- * Create the maps
+ * Creates the road map and the satellite map
  */
 function initMaps() {
 
@@ -228,27 +282,31 @@ function initMaps() {
 
     road_map.addListener('idle', function () {
         // update the url
-        url = '?zoom=' + init_zoom + '&lat=' + init_lat + '&lng=' + init_lng;
+        url = '?zoom=' + init_zoom + '&lat=' + init_lat.toFixed(5) + '&lng=' + init_lng.toFixed(5);
         window.history.replaceState("", "", url);
     });
 
     road_map.addListener('tilesloaded', function () {
-        if (is_save_image === true) {
+
+        if ((is_save_image === true) || (areasaveStatus === true)) {
             setTimeout(function () {
                 generatePicture();
-            }, 100);
+            }, 200);
         }
     });
 
     road_map.addListener('bounds_changed', function () {
-        init_zoom = road_map.zoom;
-        init_lat = road_map.center.lat();
-        init_lng = road_map.center.lng();
 
-        myLatlng = new google.maps.LatLng(init_lat, init_lng);
-        if (current_map == 'road') {
-            satellite_map.setCenter(myLatlng);
-            satellite_map.setZoom(init_zoom);
+        if (areasaveStatus === false) {
+            init_zoom = road_map.zoom;
+            init_lat = road_map.center.lat();
+            init_lng = road_map.center.lng();
+
+            myLatlng = new google.maps.LatLng(init_lat, init_lng);
+            if (current_map == 'road') {
+                satellite_map.setCenter(myLatlng);
+                satellite_map.setZoom(init_zoom);
+            }
         }
     });
 
@@ -302,7 +360,7 @@ function initMaps() {
 
     satellite_map.addListener('idle', function () {
         // update the url
-        url = '?zoom=' + init_zoom + '&lat=' + init_lat + '&lng=' + init_lng;
+        url = '?zoom=' + init_zoom + '&lat=' + init_lat.toFixed(5) + '&lng=' + init_lng.toFixed(5);
         window.history.replaceState("", "", url);
     });
 
